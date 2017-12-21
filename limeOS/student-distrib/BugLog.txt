@@ -1,0 +1,79 @@
+*****	LimeOS MP3 Buglog:	*****
+*********************************
+
+CHECKPOINT 1:
+*************
+
+BUG 1:			"Macro in idt.h"
+Description:	We attempted to use a macro to declare the basic exception handlers
+				we are using.
+Fix:			Instead of using a macro, we wrote all of the fuctions by hand in 
+				the header file.
+
+BUG 2:			"RTC & keyboard"
+Description:	The RTC was not intializing while the keyboard was initialized.
+				Both of them would work individually, but attempting to intialize
+				both of them at the same time would result in the RTC producing
+				no interupts
+Fix:			We write a wrapper with iret to properly handle this problem.
+
+CHECKPOINT 2:
+*************
+
+BUG 1:
+Description:	We mistake the meaning of termial read and terminal write, we thought
+				read is to read keyboard buffer(which we had alreadly in our code) into 
+				termial buffer, so we create another terminal buffer and let write to 
+				use the static buffer to get what user had input.
+Fix:			After checkpoint 2 demo, we immediately fixed the problem with add a while
+				loop inside terminal read, add a flag to detect for enter press, delete 
+				terminal buffer, and let terminal write use the input buffer from arguements.
+
+CHECKPOINT 3:
+*************
+
+BUG 1:			"keyboard input"
+Description:	We found out the keyboard will put charater incorrectly, leave the keyboard button 
+				will also trigger interrupt, but it will print the press botton's charater.
+				That is, the screen will have double charaters if we press a single button once.
+Fix:			We remove the do-while loop in our keyboard handler, and that fixed the problem.
+
+BUG 2:			"running two programs back to back"
+Description:	Running a single program works fine, but when we attempt to run a second program
+				right after running the first, it causes the OS to break.
+Fix:			We were not restoring the tss when we halted, and this caused us to attempt to return
+				the wrong place in our halt fucntion, causing a large amount of problems. By restorimg
+				the tss in our halt function, we fixed this bug.
+
+CHECKPOINT 4:
+*************
+
+BUG 1:			"cat with readable file"
+Description:	When we input "cat frame0.txt", the fish image shows again and again, like a infinite loop.
+Fix:			We found out that our read_file function didn't change file position after reading data,
+				so we modified the code in filesystem.c and fixed the problem.
+
+BUG 2:			"cat with executable file"
+Description:	When we do cat with executable arguements, the program will act abnormally.
+Fix:			In our file read function, we add a trailing '\0' character at the end of the returned string.
+				When we attempt to read the same number of bytes as the buffer size, this causes us to overflow the
+				buffer and cause problems. To fix this, we removed the trailing '\0'.
+
+BUG 3:			"cat using old arguments"
+Description:	When we call cat with an argument, then call it again without an argument, it will use
+				the argument from the first call for the second call.
+Fix:			We clear the buffer where we store the argument in the PCB after we copy it into the
+				buffer sent as an argument for getargs.
+
+CHECKPOINT 5:
+*************
+
+BUG 1:			"scheduling with page faults occur"
+Description:	When we start the scheduler, page fault will happen immediately.
+Fix:			We found out that we retrieved and stored the data in some local variables from PCB
+				before the context switching, then used those variables to restore ebp and esp. Local variables may be messed up when doing context switch so we changed the order and this bug resolved.
+
+BUG 2:			"Pingpong/fish lagging"
+Description:	Pingpong/fish starts to be lagging when another fish/pingpong starts running.
+Fix:			Instead of sharing one flage, we added another two flags in rtc.c
+				in order to distinguish different processes; that is, process in first terminal will and can only detect the first flag, and the bug fixed as a result.
